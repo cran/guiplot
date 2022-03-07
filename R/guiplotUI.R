@@ -191,29 +191,32 @@ setup_tabPanel_panel<-function(id="guiplot") {
 # }
 
 results_ui<-function(id="guiplot") {
-  tabPanel("Results Panel",
+  ns <- NS(id)
+
     navlistPanel(
       well = TRUE,
       fluid = TRUE,
       widths = c(3, 9),
-      "data",
-      tabPanel(
-        "data"
-      ),
+      # "data",
+      # tabPanel(
+      #   "data"
+      # ),
       "plot",
       tabPanel(
-        "plot"
+        "plot",
+        plotOutput(ns('Results_Plot1'),width = "auto", height = "auto")
       ),
       "text",
       tabPanel(
-        "text"
+        "text",
+        verbatimTextOutput(ns('Results_Text1'))
       ),
       "other",
       tabPanel(
         "other"
       )
     )
-  )
+
 }
 
 plot_ui<-function(id="guiplot"){
@@ -336,7 +339,21 @@ object_options_ui<-function(id="guiplot") {
         "Y2"
       ),
     tabPanel(
-      "Reference Lines "
+      "Reference Lines ",
+	  tabsetPanel(
+		  tabPanel(
+				"X(vline)",
+				#DTOutput(ns('vline'))
+				fluidPage(
+				 "Preview Plot Set(pixels)",
+					style='float:left',
+					DTOutput(ns('vline'), width = "100%", height = "auto")
+				)
+			),
+		  tabPanel("Y(hline)"),
+		  tabPanel("Y2()"),
+		  tabPanel("unity(abline)")
+	  )
     )
   )
 }
@@ -361,24 +378,24 @@ guiplotUI <- fluidPage(
 
   ####################################
   #Data and Plot
-  tabsetPanel(
-      tabPanel("Setup Panel",
+  tabsetPanel( id="ChildTabset",
+      ##Setup Panel UI
+      tabPanel(title = "Setup Panel",
                uiOutput("ui"),
                plot_ui("guiplot")
       ),
-
-
-	  # setup_ui("guiplot"),
-	  results_ui("guiplot")
+	    ##Results Panel UI
+      tabPanel(title = "Results Panel",
+	      results_ui("guiplot")
+      )
   ),
   # plot_ui("guiplot"),
   ####################################
 
-
   #Object Options
   object_options_ui("guiplot"),
 
-  #JS customer
+  # JS customer
   tags$script(HTML(
     '
     $("ul:gt(1) a").css("padding","1px");
