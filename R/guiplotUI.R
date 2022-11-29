@@ -78,54 +78,19 @@ geom_type_ui<-function(id="guiplot"){
              "geom type",
              checkboxGroupInput(ns("geom_type_1variable"),
                                 label = NULL, #h3("geom type of 1 variable"),
-                                choices = list(
-                                  "area",
-                                  "density",
-                                  "dotplot",
-                                  "freqpoly",
-                                  "histogram",
-                                  "bar",
-                                  "col"
-                                  ),
+                                choices = StaticData_geom_type_1variable,
                                 selected = NULL,
                                 inline=TRUE
                                 ),
              checkboxGroupInput(ns("geom_type_2variable"),
                                 label = NULL, #h3("geom type"),
-                                choices = list(
-                                  "line",
-                                  "point",
-                                  "ribbon",
-                                  "qq_line",
-                                  "quantile",
-                                  "rug",
-                                  "segment",
-                                  "smooth",
-                                  "text",
-                                  "boxplot",
-                                  "violin",
-                                  "bin2d",
-                                  "density2d",
-                                  "path",
-                                  "step"
-                                ),
+                                choices = StaticData_geom_type_2variable,
                                 selected = c("point","line"),
                                 inline=TRUE
              ),
              checkboxGroupInput(ns("geom_type_other"),
                                 label = NULL, #h3("geom type"),
-                                choices = list(
-                                  "crossbar",
-                                  "errorbar",
-                                  "linerange",
-                                  "pointrange",
-                                  "map",
-                                  "contour",
-                                  "raster",
-                                  "tile",
-                                  "polygon",
-                                  "rect"
-                                ),
+                                choices = StaticData_geom_type_other,
                                 selected = NULL,
                                 inline=TRUE
              ),
@@ -160,8 +125,8 @@ setup_tabPanel_panel<-function(id="guiplot") {
     fluidPage(
       style='float:left',
       fluidRow(
-        column(width = 2,
-          excelOutput(ns('Rexcle_tb'))
+        column(width = 3,
+          excelOutput(ns('Rexcle_tb'), width = "100%", height = "100%")
         ),
         column(width = 7,
           DTOutput(ns('dt'))
@@ -204,7 +169,7 @@ results_ui<-function(id="guiplot") {
     navlistPanel(
       well = TRUE,
       fluid = TRUE,
-      widths = c(3, 9),
+      widths = c(2, 10),
       # "data",
       # tabPanel(
       #   "data"
@@ -242,13 +207,13 @@ object_options_ui<-function(id="guiplot") {
   ns <- NS(id)
   navlistPanel(
     fluid = TRUE,
-    widths = c(3, 9),
+    widths = c(2, 10),
     "Plot",
       tabPanel(
         "themes",
         tagList(
           fluidRow(
-            column(3,
+            column(2,
                    radioButtons(ns("themes"), "themes",
                                 c("theme_gray" = "theme_gray",
                                   "theme_bw" = "theme_bw",
@@ -260,6 +225,18 @@ object_options_ui<-function(id="guiplot") {
                                   "theme_void" = "theme_void",
                                   "theme_minimal" = "theme_minimal")
                                 )
+            ),
+            column(3,
+                  textInput(ns('title_label'),'title'),
+                  textInput(ns('subtitle_label'),'subtitle'),
+                  textInput(ns('caption_label'),'caption'),
+                  textInput(ns('tag_label'),'tag')
+            ),
+            column(7,
+                  helpText("For example:
+                  geom_smooth(aes(x,y),data=data,method='lm')+theme(panel.grid.major  = element_line(colour = 'gray90'))
+                  "),
+                  textAreaInput(ns("UGC"), "Additional custom R language code", rows = 10)
             )
           )
         )
@@ -289,6 +266,45 @@ object_options_ui<-function(id="guiplot") {
       tabPanel(
         "Lattice"
       ),
+      tabPanel(
+        "Legend",
+        tagList(
+          fluidRow(
+            column(3,
+                  checkboxInput(ns('Legend_Visible'),"Legend Visible?",value = TRUE),
+                   "Legend_Tital_Label",
+                  textInput(ns('Legend_Tital_Color_Label'),'Color Label'),
+                  textInput(ns('Legend_Tital_Shape_Label'),'Shape(mark) Label'),
+                  textInput(ns('Legend_Tital_Linetype_Label'),'linetype Label')
+            ),
+            column(3,
+                   radioButtons(
+                    ns('Legend_Docking'),"Legend_Docking",
+                    c(
+                      "Relative Position"="Relative_Position",
+                      "Absolute Position"="Absolut_Position"
+                    ),
+                    selected =c("Relative_Position")
+                   ),
+                   sliderInput(ns("Legend_X_Offset"),"X Offset%",0,100,90),
+                   sliderInput(ns("Legend_Y_Offset"),"Y Offset%",0,100,50)
+
+            ),
+            column(3,
+                   selectInput(
+                              ns('Relative_Position_Select'),'Relative Position Select',
+                              c(
+                                "top"="top",
+                                "bottom"="bottom",
+                                "left"="left",
+                                "right"="right"
+                              ),
+                              selected =c("right")
+                   ),
+            )
+          )
+        )
+      ),
     "Axes",
       tabPanel(
         "X",
@@ -301,7 +317,8 @@ object_options_ui<-function(id="guiplot") {
                             "log2" = "log2",
                             "logit" = "logit",
                             "probability" = "probability",
-                            "sqrt" = "sqrt"))
+                            "sqrt" = "sqrt")),
+              textInput(ns('X_Axis_label'),'X Axis label')
             ),
             column(3,
                    radioButtons(ns("X_Range"), "Range",
@@ -328,7 +345,8 @@ object_options_ui<-function(id="guiplot") {
                                   "log2" = "log2",
                                   "logit" = "logit",
                                   "probability" = "probability",
-                                  "sqrt" = "sqrt"))
+                                  "sqrt" = "sqrt")),
+                  textInput(ns('Y_Axis_label'),'Y Axis label')
             ),
             column(3,
                    radioButtons(ns("Y_Range"), "Range",
@@ -347,23 +365,52 @@ object_options_ui<-function(id="guiplot") {
       tabPanel(
         "Y2"
       ),
-    tabPanel(
-      "Reference Lines ",
-	  tabsetPanel(
-		  tabPanel(
-				"X(vline)",
-				#DTOutput(ns('vline'))
-				fluidPage(
-				 "Preview Plot Set(pixels)",
-					style='float:left',
-					excelOutput(ns('vline'))
-				)
-			),
-		  tabPanel("Y(hline)"),
-		  tabPanel("Y2()"),
-		  tabPanel("unity(abline)")
-	  )
-    )
+      tabPanel(
+        "Reference Lines ",
+        tagList(
+          fluidRow("Usage:geom_*line(*intercept=*intercept,color=*color,size=*size,UserCustomerCode)"),
+          fluidRow(
+          "X(vline)",
+            column(3,
+              "","X(vline)",
+              textInput(ns('x_intercept'),'x intercept'),
+              textInput(ns('x_color'),'x color'),
+              textInput(ns('x_size'),'x size'),
+              textInput(ns('x_add_UGC'),'x additional UserCustomerCode')
+            ),
+            column(3,
+              "","Y(hline)",
+              textInput(ns('y_intercept'),'y intercept'),
+              textInput(ns('y_color'),'y color'),
+              textInput(ns('y_size'),'y size'),
+              textInput(ns('y_add_UGC'),'y additional UserCustomerCode')
+            ),
+            column(3,
+              "","lin(abline)",
+              textInput(ns('abline_intercept'),'lin intercept'),
+              textInput(ns('abline_color'),'lin color'),
+              textInput(ns('abline_size'),'lin size'),
+              textInput(ns('abline_add_UGC'),'lin additional UserCustomerCode')
+            ),
+            column(3,
+              checkboxInput(ns('Diagonal_Line'),"Diagonal Line?",value = FALSE),
+              textInput(ns('abline_slope'),'lin slope')
+            )
+          )
+        )
+      ),
+    "Geom",
+      tabPanel(
+        "geom_Additional_UGC",
+        tagList(
+          fluidRow(
+            "geom Additional User Customer Code",
+            helpText("Usage:  geom_line(data=data,aes(x=x,y=y, geom_Additional_AesCode ), geom_Additional_Code )"),
+            helpText("For Example Code: method = 'lm' , method = 'glm' ,  color='red', color='blue' , shape=2"),
+            DTOutput(ns('geom_Additional_UGC'))
+          )
+        )
+      )
   )
 }
 

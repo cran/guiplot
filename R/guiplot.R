@@ -9,7 +9,7 @@
 #' @import shiny ggplot2 svglite R6
 #' @importFrom excelR excelOutput renderExcel excelTable excel_to_R
 #' @importFrom DT datatable DTOutput renderDT JS editData formatStyle
-#' @importFrom rlang parse_expr parse_exprs expr
+#' @importFrom rlang parse_expr parse_exprs expr is_empty
 #' @importFrom stats na.omit
 #' @importFrom magrittr %>%
 #' @examples
@@ -97,6 +97,7 @@ guiplot <- function(..., out_dir = getwd()) {
 
     text_panels<-reactive({
       # browser()
+      #用于动态的显示设置标签页中的所有数据，作为一个标签页
       a<-NULL
       b<-NULL
       for (j in 1:nrow(res_data)){
@@ -104,7 +105,7 @@ guiplot <- function(..., out_dir = getwd()) {
         a[j]<-paste(sep="" ,"setup_tabPanel_panel(","'",Parname,"'",")")
       }
       a<-paste(a,collapse =",")
-      b<-paste(sep="" ,"navlistPanel(widths = c(3, 9),",a,")")
+      b<-paste(sep="" ,"navlistPanel(widths = c(2, 10),",a,")")
       parse_expr(b)
     })
 
@@ -152,13 +153,18 @@ guiplot <- function(..., out_dir = getwd()) {
     })
     #
     ##############################
+    geom_Additional_UGC_codes_Table <- callModule(
+      module = guiplot_geom_Additional_UGC_dt_Server,
+      id = "guiplot"
+    )
 
     Moudel_plot_codes <- callModule(
       module = guiplot_plot_Server,
       id = "guiplot",
       data = mptable(),
       dataname=res_data[,2],
-      data_col_Class_as=colClass_table()
+      data_col_Class_as=colClass_table(),
+      geom_Additional_UGC_codes_Table = geom_Additional_UGC_codes_Table
     )
 
     callModule(
@@ -167,9 +173,12 @@ guiplot <- function(..., out_dir = getwd()) {
     )
 
   }
-
-  runGadget(
-    #browser(),
-    guiplotUI, guiplotServer, viewer = browserViewer()
-  )
+  # suppressMessages({
+  #   suppressWarnings({
+      runGadget(
+        #browser(),
+        guiplotUI, guiplotServer, viewer = browserViewer()
+      )
+  #   })
+  # })
 }

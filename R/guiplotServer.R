@@ -2,10 +2,10 @@ guiplot_tital_Server<- function(input, output, session, Moudel_plot_codes) {
   observeEvent(input$ColseButton, {
     a<-parse_exprs(Moudel_plot_codes$plot_code_expr())
     stopApp(a)
-    cat("Session stopped ,Because observeEvent \n")
+    #cat("Session stopped ,Because observeEvent \n")
   })
   onStop(function() {
-    cat("Session stopped, Because onStop \n")
+    #cat("Session stopped, Because onStop \n")
     })
 }
 
@@ -41,7 +41,7 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
     )
     doSavePlot()
     sink( paste(out_dir,"/guiplot.r",sep=""))
-      cat(textOfCode())
+      #cat(textOfCode())
     sink()
   })
 
@@ -60,9 +60,8 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
   })
 }
 
-guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NULL,data_col_Class_as=NULL) {
+guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NULL,data_col_Class_as=NULL,geom_Additional_UGC_codes_Table=NULL) {
   #browser()
-  # browser()
   #get data_col_Class_as TextCode获取数据列类型转换的代码文本
   get_data_col_Class_as<- reactive({
     # browser()
@@ -78,7 +77,7 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       },silent = TRUE)
     }
     Class_as_text<-unlist(Class_as_code)
-    
+
     Class_as_text<-Class_as_text[!is.null(Class_as_text)]
     # browser()
     if (is.null(Class_as_text)) {
@@ -98,6 +97,14 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       input$geom_type_other
     )
   })
+
+  #get geom_User Costomer Codes
+  # browser()
+  # bb <- geom_Additional_UGC_codes_Table
+  # type_UGC <- bb
+  # ls02 <- geom_Additional_UGC_codes_Table$use_geomtype
+  # type_UGC <- geom_Additional_UGC_codes_Table$[ls02]
+  # type_Aes_UGC <- geom_Additional_UGC_codes_Table$[ls02]
 
   #get geom Codes
   get_geom_codes<- reactive({
@@ -124,6 +131,9 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       mark<-GetMappingValue(mptable(),11)
       # type<-c("point","line")
       type<-get_geomtype_codes()
+      ##geom User Customer Code
+      type_UGC <- geom_Additional_UGC_codes_Table()
+
       code<-geomCode(
         type=type,
         data=dataname,
@@ -134,11 +144,12 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
         group=group,
         color=color,
         linetype=linetype,
-        shape=mark
+        shape=mark,
+        type_UGC=type_UGC
         )
       if (!is.null(code))
         data_code[i]<-code
-      # cat(file=stderr(), "\n data_code is ",data_code)
+      # #cat(file=stderr(), "\n data_code is ",data_code)
     }
     data_code<-na.omit(data_code)
     data_codes<-paste(collapse ="+",data_code)
@@ -167,7 +178,7 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       )
       if (!is.null(code))
         facets_codes[i]<-code
-      # cat(file=stderr(), "\n facets_code is ",facets_code)
+      # #cat(file=stderr(), "\n facets_code is ",facets_code)
       facets_codes<-na.omit(facets_codes)
       # browser()
       return(facets_codes)
@@ -193,13 +204,70 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       expand_u=input$Y_expand_u
     )
     a<-coord_trans_code(axis_x,axis_y)
+    if(nchar(a)<17){a=NULL }
+    ###labs
+    plot_labs_codes<-plot_labs_code(
+      input$X_Axis_label,
+      input$Y_Axis_label,
+      input$title_label,
+      input$subtitle_label,
+      input$caption_label,
+      input$tag_label,
+      input$Legend_Tital_Color_Label,
+      input$Legend_Tital_Shape_Label,
+      input$Legend_Tital_Linetype_Label
+    )
+    ###
+
+    coord_labs_codes<-c(a,plot_labs_codes)
+    coord_labs_codes<-coord_labs_codes[!sapply(coord_labs_codes,function(a)any(is_empty(a),is.null(a),a==""))]
+    coord_labs_codes<-paste0(collapse ="+",c(coord_labs_codes))
     # browser()
-    if(nchar(a)<17)
-      return()
+    if(any(is_empty(coord_labs_codes),is.null(coord_labs_codes),coord_labs_codes=="")){return()}
     # return(coord_trans_code(axis_x,axis_y))
-    return(a)
+    return(coord_labs_codes)
   })
 
+  #get reference line codes
+  get_reference_line_code <- reactive({
+    # browser()
+    #X(vline)
+    X_Line_Code<-reference_line_code(
+      type="v",
+      intercept=input$x_intercept,
+      color=input$x_color,
+      size=input$x_size,
+      add_UGC=input$x_add_UGC,
+      slope="",
+      Diagonal_Line=""
+    )
+    #Y(hline)
+    Y_Line_Code<-reference_line_code(
+      type="h",
+      intercept=input$y_intercept,
+      color=input$y_color,
+      size=input$y_size,
+      add_UGC=input$y_add_UGC,
+      slope="",
+      Diagonal_Line=""
+    )
+    #lin(abline)
+    AB_Line_Code<-reference_line_code(
+      type="ab",
+      intercept=input$abline_intercept,
+      color=input$abline_color,
+      size=input$abline_size,
+      add_UGC=input$abline_add_UGC,
+      slope=input$abline_slope,
+      Diagonal_Line=input$Diagonal_Line
+    )
+    Line_Code <-list(X_Line_Code,Y_Line_Code,AB_Line_Code)
+    Line_Code <- Line_Code[!sapply(Line_Code,function(a)any(is_empty(a),is.null(a),a==""))]
+
+    if(any(is_empty(Line_Code),is.null(Line_Code),Line_Code=="")){return()}
+    # return(coord_trans_code(axis_x,axis_y))
+    return(Line_Code)
+  })
 
   #get themes codes
   get_plot_themes_codes <- reactive({
@@ -214,33 +282,70 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
     # return(coord_trans_code(axis_x,axis_y))
     return(a)
   })
+  #get legend Position codes
+  get_legend_position_code <- reactive({
+    # browser()
+    Code<-legend_position_code(
+      Legend_Visible=input$Legend_Visible,
+      Legend_Docking=input$Legend_Docking,
+      Relative_Position_Select=input$Relative_Position_Select,
+      Legend_X_Offset=input$Legend_X_Offset,
+      Legend_Y_Offset=input$Legend_Y_Offset
+    )
+    a <- Code
+    if(Code=="theme(legend.position = 'right')")
+      return()
+    # return(coord_trans_code(axis_x,axis_y))
+    return(a)
+  })
+
+  #get User Generat codes
+  get_UGC_codes <- reactive({
+    # browser()
+      UGC=input$UGC
+      a<-UGC_code(UGC)
+    # browser()
+    if(a=="")
+      return()
+    # return(coord_trans_code(axis_x,axis_y))
+    return(a)
+  })
 
   get_plot_codes <- reactive({
     ##输出数据的列类型转换代码
-    
+
     gg_data_col_Class_as<-get_data_col_Class_as()
-    cat(file=stderr(), "\n gg_data_col_Class_as is ",gg_data_col_Class_as)
+    #cat(file=stderr(), "\n gg_data_col_Class_as is ",gg_data_col_Class_as)
     # browser()
     gg_geom_codes<-get_geom_codes()
-    cat(file=stderr(), "\n gg_geom_codes is ",gg_geom_codes)
+    #cat(file=stderr(), "\n gg_geom_codes is ",gg_geom_codes)
     # browser()
 
     gg_coord_code<-get_coord_trans_codes()
-    cat(file=stderr(), "\n gg_coord_code is ",gg_coord_code)
+    #cat(file=stderr(), "\n gg_coord_code is ",gg_coord_code)
+
+    gg_reference_line_code<-get_reference_line_code()
 
     gg_themes_codes<-get_plot_themes_codes()
-    cat(file=stderr(), "\n gg_themes_codes is ",gg_themes_codes)
+    #cat(file=stderr(), "\n gg_themes_codes is ",gg_themes_codes)
 
     gg_facets_codes<-get_facets_codes()
-    cat(file=stderr(), "\n gg_facets_codes is ",gg_facets_codes)
+    #cat(file=stderr(), "\n gg_facets_codes is ",gg_facets_codes)
 
-    gg2<-c("ggplot() ",gg_geom_codes, gg_coord_code, gg_themes_codes,gg_facets_codes)
+    gg_legend_position_code <- get_legend_position_code()
+
+    gg_UGC_codes<-get_UGC_codes()
+    #cat(file=stderr(), "\n gg_UGC_codes is ",gg_UGC_codes)
+
+    gg2<-c("ggplot() ",gg_geom_codes, gg_coord_code, gg_themes_codes,gg_facets_codes,gg_legend_position_code,gg_reference_line_code,gg_UGC_codes)
+    gg2<-gg2[!sapply(gg2,function(a)any(is.null(a),a==""))]
     gg2<-paste(sep="+",collapse ="+",c(gg2))
     gg2<-paste(c(gg_data_col_Class_as,gg2),sep="",collapse ="")
 
-    cat(file=stderr(), "\n gg2 is ",gg2)
+    #cat(file=stderr(), "\n gg2 is ",gg2)
+    message("\n guiplot() generate code is ",gg2)
     # req(gg_geom_codes)
-    if (is.null(gg_geom_codes)||gg_geom_codes==""){
+    if (all(is.null(gg_geom_codes)||gg_geom_codes=="",is.null(gg_UGC_codes)||gg_UGC_codes=="")){
         # return(ggplot())
       return("ggplot()")
     }else{
@@ -353,7 +458,7 @@ guiplot_Rexcle_Server <- function(input, output, sesson, data_and_name =NULL, fi
     #type=c('text', 'autocomplete'),
     readOnly=c(TRUE,FALSE)
   )
-  ##列类型设置表格输出  
+  ##列类型设置表格输出
   output$Rexcle_tb <- renderExcel(excelTable(
 	  data=data02,
 		columns = columns02,
@@ -555,6 +660,92 @@ guiplot_layout_updata_server<-function(input, output, session){
 
 
 
+}
+guiplot_geom_Additional_UGC_dt_Server <- function(input, output, sesson) {
+  #geom_Additional_UGC
+  #get geom type Codes
+  # browser()
+  ###设定geomUGC表格的初始结构与数值
+  StaticData_geom_type<-c(StaticData_geom_type_1variable, StaticData_geom_type_2variable, StaticData_geom_type_other)
+  int_use_geomtype<-FALSE
+  int_geom_Additional_Code<-""
+  int_geom_Additional_AesCode<-""
+
+  ###设定geomUGC表格的初始结构与数值，放入一个dataframe中
+  int_geomtype_UGC_table<-data.frame(
+
+    use_geomtype=int_use_geomtype
+    ,geom_type=StaticData_geom_type
+    ,geom_Additional_Code=int_geom_Additional_Code
+    ,geom_Additional_AesCode=int_geom_Additional_AesCode
+  )
+    #新建一个环境，用于储存需要跨函数修改的变量
+  env_geomtype_UGC<- new.env(parent = emptyenv())
+  env_geomtype_UGC$table <- int_geomtype_UGC_table
+
+  get_use_geomtype<- reactive({
+    ###去读哪些geom被选中
+    c(
+      input$geom_type_1variable,
+      input$geom_type_2variable,
+      input$geom_type_other
+    )
+  })
+
+  geomtype_UGC_table<- reactive({
+      # browser()
+      ###动态更新表格中use_geomtype列的数值
+      use_geomtype<-StaticData_geom_type %in% get_use_geomtype()
+      env_geomtype_UGC$table$use_geomtype <- use_geomtype
+      return(env_geomtype_UGC$table)
+  })
+
+  output$geom_Additional_UGC = renderDT({
+    ###可视化geomtype_UGC_table表格中的内容
+    geomtype_UGC_table()
+    table_edit_info()
+      datatable(
+        env_geomtype_UGC$table,
+        rownames = FALSE,
+        editable = list(target = "cell", disable = list(columns = c(0,1))),
+        selection = list(mode = 'single', target = 'cell'),
+        extensions = c('AutoFill'),
+        class = 'table-hover',
+        options = list(
+          autoFill = list(alwaysAsk=FALSE, columns = c(2, 3)),
+          dom = 't',paging = FALSE, ordering = FALSE,
+          columnDefs = list(
+            list(targets = c(1:3), searchable = FALSE),
+            list(targets = c(0), visible=FALSE)
+          ),
+          search = list(search = "true")
+        )
+      )
+  })
+
+  table_edit_info<- reactive({input$geom_Additional_UGC_cell_edit})###获取celledit的信息
+  observeEvent(input$geom_Additional_UGC_cell_edit, {
+    ###应用celledit的信息更新表格
+    #########
+    #由于DT表格显示时，未显示行名称列，由此导致列数少了1，从而导致info中的列数计算向左偏了1列，所有此处更新编辑的信息时，取子集
+    #########
+    # 由于仅包含一个observe，仅能更新环境变量中的数据，而不是同时更新DT表格的显示，所以此处额外增加了一个info的reactive数值，作为中转，
+    # 并且在observer和DT中都同时引用此reactive，以便达成更新环境中的表格时更新DT表格显示
+    ########
+    # browser()
+    env_geomtype_UGC$table[2:4] <- editData(env_geomtype_UGC$table[2:4], table_edit_info(), 'geom_Additional_UGC')
+  })
+
+  # return(env_geomtype_UGC$table)
+
+  return(
+    reactive({
+    geomtype_UGC_table()
+    table_edit_info()
+      ls <- env_geomtype_UGC$table
+      return(ls)
+    })
+  )
 }
 
 #################################
