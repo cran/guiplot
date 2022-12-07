@@ -18,7 +18,7 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
   output_plot_height <- reactive({input$output_plot_height})
   output_plot_dpi <- reactive({input$output_plot_dpi})
   units <- reactive({"cm"})
-  textOfCode = reactive(gsub("\\+","\\+\n", Moudel_plot_codes$plot_code_expr()))
+  textOfCode = reactive(gsub(";",";\n",gsub("\\+","\\+\n", Moudel_plot_codes$plot_code_expr())))
 
   doSavePlot = reactive({
     aa <- textOfCode()
@@ -39,10 +39,11 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
     updateTabsetPanel(session = parentSession, inputId="ChildTabset",
       selected = "Results Panel"
     )
+    #保存图片为图片文件
     doSavePlot()
-    sink( paste(out_dir,"/guiplot.r",sep=""))
-      #cat(textOfCode())
-    sink()
+    #将代码保存为文本文件
+    cat(textOfCode(),file = "guiplot.r")
+
   })
 
   output$Results_Plot1 <- renderImage({
@@ -187,13 +188,17 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
 
   #get coord codes
   get_coord_trans_codes <- reactive({
+
+    coord_flip <- NULL
+    if(input$coord_flip==TRUE) coord_flip <- "coord_flip()"
     axis_x<-list(
       Scale=input$X_Scale,
       Range=input$X_Range,
       Minimum=input$X_Minimum,
       Maximum=input$X_Maximum,
       expand_p=input$X_expand_p,
-      expand_u=input$X_expand_u
+      expand_u=input$X_expand_u,
+      Tick=input$X_Tick
     )
     axis_y<-list(
       Scale=input$Y_Scale,
@@ -201,7 +206,8 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       Minimum=input$Y_Minimum,
       Maximum=input$Y_Maximum,
       expand_p=input$Y_expand_p,
-      expand_u=input$Y_expand_u
+      expand_u=input$Y_expand_u,
+      Tick=input$Y_Tick
     )
     a<-coord_trans_code(axis_x,axis_y)
     if(nchar(a)<17){a=NULL }
@@ -219,7 +225,7 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
     )
     ###
 
-    coord_labs_codes<-c(a,plot_labs_codes)
+    coord_labs_codes<-c(a,plot_labs_codes,coord_flip)
     coord_labs_codes<-coord_labs_codes[!sapply(coord_labs_codes,function(a)any(is_empty(a),is.null(a),a==""))]
     coord_labs_codes<-paste0(collapse ="+",c(coord_labs_codes))
     # browser()
@@ -390,9 +396,19 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
    )
   })
 
+  #text code
+  plot_code_expr=reactive({as.character(get_plot_codes())})
+  output$text_gg_codes <- renderText({
+    # browser()
+    a <- plot_code_expr()
+    gsub(";",";\n",gsub("\\+","\\+\n", a))
+  })
+
+  #返回的内容
   return(
     list(
-      plot_code_expr=reactive({as.character(get_plot_codes())})
+      #plot_code_expr=reactive({as.character(get_plot_codes())})
+      plot_code_expr=plot_code_expr
       # width=reactive({input$output_plot_width}),
       # height=reactive({input$output_plot_height}),
       # scale=reactive({input$web_plot_scale}),
@@ -420,8 +436,10 @@ guiplot_Rexcle_Server <- function(input, output, sesson, data_and_name =NULL, fi
   txt_colClass<-function(data,typeTab,data_name){
     ##用于生成将列的类型由当前强制转换为typeTab中指定类型的文字，以便之后通过evalue使用
     out_txt<-""
-    class_Eq01<-mapply("==",typeTab[,2],sapply(data, class))##原类型和新类型是否一致
-    class_Eq02<-mapply("==",typeTab[,2],"")##新类型是否为空
+    ##原类型和新类型是否一致
+    class_Eq01<-mapply(identical ,typeTab[,2],sapply(data, class))
+    ##新类型是否为空
+    class_Eq02<-mapply(identical ,typeTab[,2],"")
     class_Eq<-!mapply(any,class_Eq01,class_Eq02)
     if(any(class_Eq)){
       ##获取需要修改类型的列的列名，并将此代码转换为文本

@@ -1,7 +1,7 @@
-10ef9ceabb07bae67291e977b1debe93 *DESCRIPTION
+9aa0aaf706e4e472fd9626c65b1f487f *DESCRIPTION
 66a545074af2028854d4ae82294f1fda *LICENSE
 7da954d7105cf952183aec07968a5dc8 *NAMESPACE
-898c056a1ec56e6f9f49534dd2c2804c *NEWS
+2e06fa76d22eb78e15f06d9f6578b810 *NEWS
 1018098407bf93c9b48c9aed97044f75 *R/PK.R
 600b6aedd6303f1b95e6d4ab2dbba0b3 *R/R6_Class_Mapping_Table.R
 b98905819735b18e3bfe3cfc2eaa8174 *R/colClass_as.R
@@ -9,10 +9,10 @@ a898ea25d7be705735699c1d27f6cb38 *R/get_data.R
 0387402051ab6e513384f3e5f1e3103c *R/ggplotcodes.R
 4aad348c727340de3c8cda7242fdc6a3 *R/global.R
 a1e524600eb67ef97ac6761ce851132e *R/guiplot.R
-0e738a86e51ea0c4c3108b74deddddf1 *R/guiplotServer.R
-f9b18315a4de8f92c5fba0a5b13a5c2e *R/guiplotUI.R
-15f83a565b5ee101ec88c3b90d6a0fef *R/optioncodes.R
+8b48ac9812450a3a3f95bb07bcdcf77e *R/guiplotServer.R
+792d8dbece35ebbfa501fc3fae9fa9bb *R/guiplotUI.R
+817c426e3b8ed8da9321d6fa2127b6f6 *R/optioncodes.R
 1496a0228fccb8a22a2b1798b2b31ecc *data/PK.rda
 0a32c3fa6da699f2ab23571b2dd901dd *man/PK.Rd
-810f8b8bad336967fa03150c0523ac1d *man/colClass_as.Rd
+8c42600a81d2b8de4e62ac77f8a09496 *man/colClass_as.Rd
 8b9fc4b6466ca5b0349a9c92159afd5a *man/guiplot.Rd

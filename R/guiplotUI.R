@@ -224,7 +224,8 @@ object_options_ui<-function(id="guiplot") {
                                   "theme_classic" = "theme_classic",
                                   "theme_void" = "theme_void",
                                   "theme_minimal" = "theme_minimal")
-                                )
+                                ),
+                  checkboxInput(ns("coord_flip"), "Axes_flip?(X\u2194Y)", value = FALSE)
             ),
             column(3,
                   textInput(ns('title_label'),'title'),
@@ -325,7 +326,8 @@ object_options_ui<-function(id="guiplot") {
                                 c("Auto-scale Uniform" = "none",
                                   "Custom" = "Custom")),
                    numericInput(ns('X_Minimum'),'Minimum',0),
-                   numericInput(ns('X_Maximum'),'Maximum',100)
+                   numericInput(ns('X_Maximum'),'Maximum',100),
+                   textInput(ns("X_Tick"),"Customer Axis Scale Tick" )
             ),
             column(3,
                    numericInput(ns('X_expand_p'),'expand_plot',0.05),
@@ -353,7 +355,8 @@ object_options_ui<-function(id="guiplot") {
                                 c("Auto-scale Uniform" = "none",
                                   "Custom" = "Custom")),
                    numericInput(ns('Y_Minimum'),'Minimum',0),
-                   numericInput(ns('Y_Maximum'),'Maximum',100)
+                   numericInput(ns('Y_Maximum'),'Maximum',100),
+                   textInput(ns("Y_Tick"),"Customer Axis Scale Tick" )
             ),
             column(3,
                    numericInput(ns('Y_expand_p'),'expand_plot',0.05),
@@ -370,7 +373,7 @@ object_options_ui<-function(id="guiplot") {
         tagList(
           fluidRow("Usage:geom_*line(*intercept=*intercept,color=*color,size=*size,UserCustomerCode)"),
           fluidRow(
-          "X(vline)",
+          # "X(vline)",
             column(3,
               "","X(vline)",
               textInput(ns('x_intercept'),'x intercept'),
@@ -424,7 +427,28 @@ object_options_ui<-function(id="guiplot") {
 #     )
 #   )
 # }
-
+text_gg_codes_ui <- function(id = "guiplot") {
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      column(
+        6,
+        "Generated Codes",
+        verbatimTextOutput(
+          ns("text_gg_codes")
+        )
+      ),
+      column(
+        6,
+        textAreaInput(
+          ns("text_editor"),
+          "Just A Text Editor",
+          rows = 10
+        )
+      )
+    )
+  )
+}
 
 guiplotUI <- fluidPage(
   #Header
@@ -450,6 +474,7 @@ guiplotUI <- fluidPage(
 
   #Object Options
   object_options_ui("guiplot"),
+  text_gg_codes_ui("guiplot"),
 
   # JS customer
   tags$script(HTML(
