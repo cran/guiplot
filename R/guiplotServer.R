@@ -18,10 +18,11 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
   output_plot_height <- reactive({input$output_plot_height})
   output_plot_dpi <- reactive({input$output_plot_dpi})
   units <- reactive({"cm"})
-  textOfCode = reactive(gsub(";",";\n",gsub("\\+","\\+\n", Moudel_plot_codes$plot_code_expr())))
+  textOfCode_guipot_codes = reactive(gsub(";",";\n",gsub("\\+","\\+\n", Moudel_plot_codes$plot_code_expr())))
+  textOfCode_Phoenix_codes = reactive(gsub(";","\n",gsub("\\+","\\+\n", Moudel_plot_codes$UsedColNames_texts())))
 
   doSavePlot = reactive({
-    aa <- textOfCode()
+    aa <- textOfCode_guipot_codes()
     parameterList <- list(path=out_dir,
                           width = input$output_plot_width,
                           height =input$output_plot_height,
@@ -42,7 +43,26 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
     #保存图片为图片文件
     doSavePlot()
     #将代码保存为文本文件
-    cat(textOfCode(),file = "guiplot.r")
+    cat(textOfCode_guipot_codes(),file = "guiplot.r")
+
+    textOfCode_Phoenix_codes_shell <- paste0(
+      "#Load dependent packages,\u52a0\u8f7d\u4f9d\u8d56\u7684\u6dfb\u52a0\u5305","\n",
+      "require(guiplot)","\n",
+      "require(ggplot2)","\n",
+      "\n",
+      "#The following statement describes the required dataset and the columns it contains,","\n",
+      "#which are required by Phoenix software and can be deleted if non-Phoenix software users.","\n",
+      "#This is generated based on the mapping state in the mapping table","\n",
+      "#\u4e0b\u8ff0\u8bed\u53e5\u8bf4\u660e\u4e86\u6240\u5fc5\u987b\u7684\u6570\u636e\u96c6\u4ee5\u53ca\u6570\u636e\u96c6\u5305\u542b\u7684\u5217,","\n",
+      "#\u8fd9\u662fPhoenix\u8f6f\u4ef6\u6240\u9700\u8981\u7684,\u5982\u679c\u975ePhoenix\u8f6f\u4ef6\u7528\u6237\u53ef\u5220\u9664\u6389\u3002","\n",
+      "#\u8fd9\u662f\u57fa\u4e8e\u6620\u5c04\u8868\u683c\u4e2d\u6620\u5c04\u60c5\u51b5\u751f\u6210\u7684","\n",
+      "\n",
+      textOfCode_Phoenix_codes(),"\n",
+      "\n",
+      "#The drawing code of plot,\u56fe\u8868\u7ed8\u5236\u7684\u4ee3\u7801","\n",
+      textOfCode_guipot_codes()
+      )
+    cat(textOfCode_Phoenix_codes_shell,file = "Phoenix_codes.r")
 
   })
 
@@ -56,8 +76,27 @@ guiplot_result_Server <- function(input, output, session, out_dir =NULL, Moudel_
     )
   },deleteFile=TRUE)
 
-  output$Results_Text1 <- renderText({
-    textOfCode()
+  output$Results_Text1_guipot_codes <- renderText({
+    textOfCode_guipot_codes()
+  })
+  output$Results_Text1_Phoenix_codes <- renderText({
+    paste0(
+      "#Load dependent packages,\u52a0\u8f7d\u4f9d\u8d56\u7684\u6dfb\u52a0\u5305","\n",
+      "require(guiplot)","\n",
+      "require(ggplot2)","\n",
+      "\n",
+      "#The following statement describes the required dataset and the columns it contains,","\n",
+      "#which are required by Phoenix software and can be deleted if non-Phoenix software users.","\n",
+      "#This is generated based on the mapping state in the mapping table","\n",
+      "#\u4e0b\u8ff0\u8bed\u53e5\u8bf4\u660e\u4e86\u6240\u5fc5\u987b\u7684\u6570\u636e\u96c6\u4ee5\u53ca\u6570\u636e\u96c6\u5305\u542b\u7684\u5217,","\n",
+      "#\u8fd9\u662fPhoenix\u8f6f\u4ef6\u6240\u9700\u8981\u7684,\u5982\u679c\u975ePhoenix\u8f6f\u4ef6\u7528\u6237\u53ef\u5220\u9664\u6389\u3002","\n",
+      "#\u8fd9\u662f\u57fa\u4e8e\u6620\u5c04\u8868\u683c\u4e2d\u6620\u5c04\u60c5\u51b5\u751f\u6210\u7684","\n",
+      "\n",
+      textOfCode_Phoenix_codes(),"\n",
+      "\n",
+      "#The drawing code of plot,\u56fe\u8868\u7ed8\u5236\u7684\u4ee3\u7801","\n",
+      textOfCode_guipot_codes()
+    )
   })
 }
 
@@ -67,8 +106,8 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
   get_data_col_Class_as<- reactive({
     # browser()
     ls1<-data_col_Class_as
-    geom_data_names<-c(datanames)
-    n_data<-length(geom_data_names)
+    geom_data_names<-c(datanames)#datanames数据集名称集合
+    n_data<-length(geom_data_names)#n_data数据集数量
     Class_as_code<-NULL
 
     for (i in 1:n_data){
@@ -113,8 +152,9 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
     ls1<-data
     geom_data_names<-c(datanames)
     n_data<-length(geom_data_names)
-    data_code<-NULL
-    for (i in 1:n_data){
+    data_code<-NULL#绘图代码集合，一维列表
+    UsedColNames_text<-NULL#数据集中使用列的名称代码集合，一维列表
+    for (i in 1:n_data){#循环所有数据集
       mptable<-data[[i]]
       dataname<-c(geom_data_names[[i]])
 
@@ -128,8 +168,9 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
       ymax<-GetMappingValue(mptable(),5)
       group<-GetMappingValue(mptable(),8)
       color<-GetMappingValue(mptable(),9)
-      linetype<-GetMappingValue(mptable(),10)
-      mark<-GetMappingValue(mptable(),11)
+      fill<-GetMappingValue(mptable(),10)
+      linetype<-GetMappingValue(mptable(),11)
+      mark<-GetMappingValue(mptable(),12)
       # type<-c("point","line")
       type<-get_geomtype_codes()
       ##geom User Customer Code
@@ -144,17 +185,31 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
         ymax=ymax,
         group=group,
         color=color,
+        fill=fill,
         linetype=linetype,
         shape=mark,
         type_UGC=type_UGC
         )
-      if (!is.null(code))
-        data_code[i]<-code
+      if (!is.null(code)) data_code[i]<-code
       # #cat(file=stderr(), "\n data_code is ",data_code)
+
+      ###获取使用的数据集中使用的列，并将其与数据名字何在一起转化为文本
+      UsedDataColumnsNames <- GetUsedDataColumnsNames(mptable())
+
+      if (!is.null(UsedDataColumnsNames)) {
+        UsedDataColumnsNames_text<-paste0("attach(",dataname,") #WNL_IN ",paste(UsedDataColumnsNames,collapse=" "),"#")
+        # browser()
+        UsedColNames_text[i]<-UsedDataColumnsNames_text
+      }
     }
     data_code<-na.omit(data_code)
     data_codes<-paste(collapse ="+",data_code)
-    data_codes
+    # data_codes
+
+    UsedColNames_text<-na.omit(UsedColNames_text)
+    UsedColNames_texts<-paste(collapse =";",UsedColNames_text)
+    
+    list(data_codes=data_codes,UsedColNames_texts=UsedColNames_texts)
   })
 
   #get facets codes
@@ -323,7 +378,7 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
     gg_data_col_Class_as<-get_data_col_Class_as()
     #cat(file=stderr(), "\n gg_data_col_Class_as is ",gg_data_col_Class_as)
     # browser()
-    gg_geom_codes<-get_geom_codes()
+    gg_geom_codes<-get_geom_codes()[1]
     #cat(file=stderr(), "\n gg_geom_codes is ",gg_geom_codes)
     # browser()
 
@@ -403,12 +458,14 @@ guiplot_plot_Server <- function(input, output, session, data =NULL,datanames=NUL
     a <- plot_code_expr()
     gsub(";",";\n",gsub("\\+","\\+\n", a))
   })
-
+  #text code
+  UsedColNames_texts=reactive({as.character(get_geom_codes()[2])})
   #返回的内容
   return(
     list(
       #plot_code_expr=reactive({as.character(get_plot_codes())})
-      plot_code_expr=plot_code_expr
+      plot_code_expr=plot_code_expr,
+      UsedColNames_texts=UsedColNames_texts
       # width=reactive({input$output_plot_width}),
       # height=reactive({input$output_plot_height}),
       # scale=reactive({input$web_plot_scale}),
@@ -771,7 +828,7 @@ guiplot_geom_Additional_UGC_dt_Server <- function(input, output, sesson) {
 #################################
 #GetMappingValue for guiplot_plot_Server
 GetMappingValue<-function(data,column){
-  # browser()
+  #browser()
   nr<-nrow(data)
   if (is.null(nr))
     return()
@@ -782,6 +839,19 @@ GetMappingValue<-function(data,column){
     }
   }
   var1
+}
+
+GetUsedDataColumnsNames<-function(data){
+  nr<-nrow(data)
+  if (is.null(nr)) return(NULL)#如果表格为空，则退出
+  # browser()
+  data_exclude_None <- data[,-1]#去掉none字段
+  sumD <- apply(data_exclude_None,1,sum)#求每一行的和
+  if(sum(sumD)==0) return(NULL)
+  usecols <- rownames(data)[sumD!=0]#如果和不为0（未作任何映射），则返回此行的名称（数据集中的列名）
+  usecols <- gsub(" ","_",usecols)#WNL的列名中不支持空格，所以此处将空格替换为下划线
+  usecols
+  # browser()
 }
 
 ####~~ JS回调代码-----
